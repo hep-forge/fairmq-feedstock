@@ -1,0 +1,86 @@
+{% set versions = {
+    "1.11.0": "a34fa64dc1cc2bd5efd11f0946974c9ff6d75c84"
+} %}
+
+{% set version = environ.get('COMMIT_VERSION', None) %}
+{% set version = version or versions.keys()|first %}
+{% set version = version|string %}
+
+package:
+  name: {{ environ.get('ANACONDA_PACKAGE', "fairmq")|string|lower }}
+  version: {{ environ.get('ANACONDA_VERSION', version)|replace("-", ".") }}
+
+source:
+  # A git source, not the release tarball: GitHub tarballs ship the
+  # extern/ submodules empty (the bundled PicoSHA2 header is required) and
+  # carry no .git, so FairMQ's get_git_version() would stamp 0.0.0.0 into
+  # FairMQConfig.cmake and its build_bundled() helper would abort trying
+  # `git submodule update` outside a repository. conda-build clones with
+  # tags and initialises submodules, which fixes both.
+  git_url: "https://github.com/FairRootGroup/FairMQ"
+  git_rev: {{ versions.get(version, "v" ~ version) }}
+
+build:
+  number: 0
+  # hep-forge publishes linux-64 + linux-aarch64 only. The shared CI
+  # template still schedules a macos-arm64 leg unless the repo variable
+  # ANACONDA_COMPILE=amd64,arm64 is set; skipping here keeps that leg a
+  # no-op instead of a red build.
+  skip: true  # [not linux]
+  run_exports:
+    - {{ pin_subpackage("fairmq", max_pin="x.x") }}
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ stdlib('c') }}
+    - cmake
+    - make
+    - git
+  host:
+    - faircmakemodules
+    - fairlogger
+    - fmt
+    # 1.88 shipped Boost.Process v2 without the v1 compatibility headers;
+    # FairMQ's CMake refuses it outright.
+    - libboost-devel !=1.88.*
+    - zeromq
+  run:
+    # FairMQConfig.cmake re-finds its PUBLIC deps (FairLogger, Boost) in
+    # downstream projects, so they have to be present at runtime too.
+    - fairlogger
+    - libboost-devel !=1.88.*
+    - zeromq
+
+test:
+  requires:
+    - cmake
+    - make
+    - {{ compiler('cxx') }}
+  commands:
+    - test -f ${PREFIX}/lib/libfairmq.so
+    - test -f ${PREFIX}/include/fairmq/Device.h
+    - fairmq-uuid-gen --help
+    - fairmq-shmmonitor --help
+    - fairmq-sink --help
+    # The installed CMake package must resolve its own dependencies.
+    - cmake --find-package -DNAME=FairMQ -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST -DCMAKE_PREFIX_PATH=${PREFIX}
+
+about:
+  home: https://github.com/FairRootGroup/FairMQ
+  license: LGPL-3.0-only
+  license_file: LICENSE
+  summary: "C++ message queuing library and framework"
+  description: |
+    FairMQ is designed to help implementing large-scale data processing
+    workflows needed in next-generation Particle Physics experiments. It is
+    a message queuing library and framework that provides an asynchronous
+    message-passing abstraction over ZeroMQ and shared-memory transports,
+    together with a device state machine, plugin system and configuration
+    handling for building distributed processing topologies.
+  doc_url: https://github.com/FairRootGroup/FairMQ/blob/master/README.md
+  dev_url: https://github.com/FairRootGroup/FairMQ
+
+extra:
+  recipe-maintainers:
+    - meiyasan
