@@ -10,10 +10,10 @@ c_stdlib_version:              # [linux]
 # oldest major still current for both linux-64 and linux-aarch64, and
 # defaults to gnu++17, which is what FairMQ requires.
 c_compiler_version:    # [linux]
-  - 14
+  - 14                       # [linux]
 cxx_compiler_version:  # [linux]
-  - 14
+  - 14                       # [linux]
 libgcc_version:        # [linux]
-  - 14.*
+  - 14.*                     # [linux]
 libstdcxx_version:     # [linux]
-  - 14.*
+  - 14.*                     # [linux]
