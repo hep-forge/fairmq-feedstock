@@ -1,8 +1,10 @@
 c_stdlib:
   - sysroot                    # [linux]
+  - macosx_deployment_target   # [osx]
 
-c_stdlib_version:              # [linux]
+c_stdlib_version:              # [unix]
   - 2.17                       # [linux]
+  - 11.0                       # [osx]
 
 # ---- Compiler floor (ABI)
 # Same floor as the rest of hep-forge (see jana-feedstock): pin the
@@ -17,3 +19,8 @@ libgcc_version:        # [linux]
   - 14.*                     # [linux]
 libstdcxx_version:     # [linux]
   - 14.*                     # [linux]
+# macOS: the clang ROOT is built with (root-feedstock pins 20).
+c_compiler_version:    # [osx]
+  - 20                         # [osx]
+cxx_compiler_version:  # [osx]
+  - 20                         # [osx]
